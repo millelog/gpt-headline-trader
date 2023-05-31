@@ -60,6 +60,22 @@ def map_headlines_to_market_period(headlines: List[Tuple[str, datetime.datetime]
 
 def calculate_cumulative_score(scores: List[int]) -> float:
     """
+    Calculates the total score for a given list of scores.
+
+    Parameters
+    ----------
+    scores : List[int]
+        List of scores.
+
+    Returns
+    -------
+    float
+        The total score.
+    """
+    return np.sum(scores)
+
+def calculate_average_score(scores: List[int]) -> float:
+    """
     Calculates the average score for a given list of scores.
 
     Parameters
@@ -72,9 +88,7 @@ def calculate_cumulative_score(scores: List[int]) -> float:
     float
         The average score.
     """
-    return np.sum(scores)
-
-
+    return np.mean(scores)
 
 def execute_trade(ticker: str, data: dict):
     """
@@ -88,8 +102,9 @@ def execute_trade(ticker: str, data: dict):
         The data containing headlines, responses, scores, average score, and trade time.
     """
     # For now, just log the whole data object into a JSON file
-    average_score = data['average_score']
-    with open(f'data/{ticker}_{average_score}_data.json', 'w') as f:
+    total_score = str(round(data['total_score']))
+    average_score = str(round(data['average_score'],2))
+    with open(f'data/{ticker}_{average_score}_{total_score}_data.json', 'w') as f:
         json.dump(data, f, indent=4, default=str)  # `default=str` is used to handle datetime objects
 
     # TODO: Implement your trading strategy here. For instance:

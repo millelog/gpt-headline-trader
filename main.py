@@ -3,7 +3,7 @@ import logging
 from typing import List, Tuple
 from utils.data_utils import get_headlines, preprocess_headlines, save_headlines_to_file
 from utils.gpt_utils import generate_prompt, get_gpt3_response, process_gpt3_response
-from utils.trading_utils import map_headlines_to_market_period, calculate_cumulative_score, execute_trade
+from utils.trading_utils import map_headlines_to_market_period, calculate_cumulative_score, execute_trade, calculate_average_score
 from config import TICKERS
 import heapq
 
@@ -51,8 +51,9 @@ def main():
             responses.append(response)
 
         # Calculate average score for the day
-        average_score = calculate_cumulative_score(scores)
-        logging.info(f"Average score for {ticker}: {average_score}")
+        total_score = calculate_cumulative_score(scores)
+        average_score = calculate_average_score(scores)
+        logging.info(f"Average score for {ticker}: {average_score}, {total_score}")
 
         # Store all the relevant information for the ticker in the dictionary
         ticker_data[ticker] = {
@@ -60,9 +61,10 @@ def main():
             "responses": responses,
             "scores": scores,
             "average_score": average_score,
+            "total_score": total_score,
             "trade_time": headlines[0][1] if headlines else None  # Assumes all headlines for the same ticker have the same trade time
         }
-        if average_score < 0:
+        if total_score < 0 or average_score < 0:
             execute_trade(ticker, ticker_data[ticker])
 
     logging.info("Finished processing all tickers")
