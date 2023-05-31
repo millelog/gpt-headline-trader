@@ -55,6 +55,8 @@ def main():
             "average_score": average_score,
             "trade_time": headlines[0][1] if headlines else None  # Assumes all headlines for the same ticker have the same trade time
         }
+        if average_score < 0:
+            execute_trade(ticker, ticker_data[ticker])
 
     logging.info("Finished processing all tickers")
 

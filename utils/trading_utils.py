@@ -88,7 +88,8 @@ def execute_trade(ticker: str, data: dict):
         The data containing headlines, responses, scores, average score, and trade time.
     """
     # For now, just log the whole data object into a JSON file
-    with open(f'data/{ticker}_data.json', 'w') as f:
+    average_score = data['average_score']
+    with open(f'data/{ticker}_{average_score}_data.json', 'w') as f:
         json.dump(data, f, indent=4, default=str)  # `default=str` is used to handle datetime objects
 
     # TODO: Implement your trading strategy here. For instance:

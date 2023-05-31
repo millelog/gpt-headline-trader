@@ -2,3 +2,5 @@
 /.venv/*
 /logs/*
 .env
+*.pyc
+__pycache__/*
