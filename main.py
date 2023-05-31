@@ -32,9 +32,6 @@ def main():
         headlines = preprocess_headlines(headlines)
         logging.info(f"After preprocessing, {len(headlines)} headlines left for {ticker}")
 
-        # Save the headlines to a file
-        save_headlines_to_file(headlines, f"data/{ticker}_headlines.json")
-
         # Map headlines to the next market period
         headlines = map_headlines_to_market_period(headlines)
         logging.info(f"Mapped headlines to market period for {ticker}")
@@ -69,7 +66,7 @@ def main():
 
         if average_score < 0:
             with open('data/negative_averages.json', 'w') as outfile:
-                json.dump(ticker_data, outfile)
+                json.dump({ticker: data for ticker, data in ticker_data.items() if data['average_score'] < 0}, outfile, indent=4, default=str)
 
 
     logging.info("Finished processing all tickers")
