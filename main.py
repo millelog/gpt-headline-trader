@@ -3,7 +3,7 @@ import logging
 from typing import List, Tuple
 from utils.data_utils import get_headlines, preprocess_headlines, save_headlines_to_file
 from utils.gpt_utils import generate_prompt, get_gpt3_response, process_gpt3_response
-from utils.trading_utils import map_headlines_to_market_period, calculate_average_score, execute_trade
+from utils.trading_utils import map_headlines_to_market_period, calculate_cumulative_score, execute_trade
 from config import TICKERS
 import heapq
 
