@@ -50,8 +50,8 @@ def http_request_get(
                 verify=False,
                 headers={"User-Agent": user_agent},
             )
-
-        content.raise_for_status()  # Raise HTTPError for bad requests (4xx or 5xx)
+        content.raise_for_status()
+              # Raise HTTPError for bad requests (4xx or 5xx)
         if parse:
             return html.fromstring(content.text), content.url
         else:

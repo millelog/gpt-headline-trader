@@ -3,4 +3,4 @@
 /logs/*
 .env
 *.pyc
-__pycache__/*
+utils/__pycache__/*

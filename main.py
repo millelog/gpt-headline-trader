@@ -17,9 +17,12 @@ def main():
         logging.info(f"Processing ticker {ticker}")
 
         # Get headlines for the ticker
-        headlines = get_headlines(ticker)
-        logging.info(f"Found {len(headlines)} headlines for {ticker}")
-
+        try:
+            headlines = get_headlines(ticker)
+            logging.info(f"Found {len(headlines)} headlines for {ticker}")
+        except:
+            logging.info(f"Error getting headlines for {ticker}, continuing.")
+            continue
         # Preprocess the headlines
         headlines = preprocess_headlines(headlines)
         logging.info(f"After preprocessing, {len(headlines)} headlines left for {ticker}")
