@@ -58,7 +58,7 @@ def map_headlines_to_market_period(headlines: List[Tuple[str, datetime.datetime]
 
 
 
-def calculate_average_score(scores: List[int]) -> float:
+def calculate_cumulative_score(scores: List[int]) -> float:
     """
     Calculates the average score for a given list of scores.
 
@@ -72,7 +72,7 @@ def calculate_average_score(scores: List[int]) -> float:
     float
         The average score.
     """
-    return np.mean(scores)
+    return np.sum(scores)
 
 
 

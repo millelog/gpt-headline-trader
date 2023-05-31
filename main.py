@@ -23,6 +23,10 @@ def main():
         except:
             logging.info(f"Error getting headlines for {ticker}, continuing.")
             continue
+        
+        if not headlines:
+            continue
+
         # Preprocess the headlines
         headlines = preprocess_headlines(headlines)
         logging.info(f"After preprocessing, {len(headlines)} headlines left for {ticker}")
@@ -47,7 +51,7 @@ def main():
             responses.append(response)
 
         # Calculate average score for the day
-        average_score = calculate_average_score(scores)
+        average_score = calculate_cumulative_score(scores)
         logging.info(f"Average score for {ticker}: {average_score}")
 
         # Store all the relevant information for the ticker in the dictionary
