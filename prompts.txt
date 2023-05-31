@@ -1,0 +1,114 @@
+I'm constructing a python bot that will read financial news headlines and return a sentiment analysis on each of them using the langchain / openai api.
+Another part will then aggregate these sentiments and then return a score for whether that stock is a good candidate for short-selling.
+I want to run this for 100 tickers out of the s&p 500, it will batch the headlines by ticker and then run one chatgpt api request for the headlines of for that ticker.
+I'm using the finviz unofficial python api to get the news headlines and langchain to do the open ai API gpt requests.
+I'm implementing this strategy:
+
+We first collect a comprehensive news dataset for all CRSP companies using web scraping. We search for all news containing either the company name or the ticker. The resulting
+dataset comprises news headlines from various sources, such as major news agencies, financial news websites, and social media platforms. For each company, we collect all news in
+the sample period. We then match the headlines with those from a prominent news sentiment analysis data provider (RavenPack). We match the period and the news title for all
+companies that have returns on the following market opening. The majority of matched
+headlines correspond to press releases. We do not use the RavenPack enhance headlines that
+potentially contain more information since they are not widely disseminated to the public.
+We match 67,586 headlines of 4,138 unique companies. We process the merged dataset using
+the preprocessing methods outlined by Jiang, Li, and Wang (2021).
+Importantly, matching with RavenPack assures that only relevant news will be used for
+the experiment. They closely monitor the major financial news distribution outlets and
+have a quality procedure matching news, timestamps, and entity names that solves any
+errors that may have come from the web scraping procedure. Further, we employ their news
+categorization to explain the differences in return predictability across different models.
+Moreover, they have a close mapping with CRSP which ensures the matching of the news
+and returns at the exact time. We further use their infrastructure by using only the news
+they consider recent for a given company in a given period.
+We employ the “relevance score” provided, which ranges from 0 to 100, to indicate how
+closely the news pertains to a specific company. A 0 (100) score implies that the entity is
+mentioned passively (predominantly). Our sample requires news stories with a relevance
+score of 100, and we limit it to complete articles and press releases. We exclude headlines
+categorized as ‘stock-gain’ and ‘stock-loss’ as they only indicate the daily stock movement
+direction. To avoid repeated news, we require the “event similarity days” to exceed 90, which
+ensures that only new information about a company is captured. Furthermore, we eliminate
+7
+
+duplicate headlines for the same company on the same day and extremely similar headlines.
+We gauge headline similarity using the Optimal String Alignment metric (also known as the
+Restricted Damerau-Levenshtein distance) and remove headlines with a similarity greater
+than 0.6 for the same company on the same day. These filtering techniques do not introduce
+look-ahead bias, as the data vendor evaluates all news articles within milliseconds of receipt
+and promptly sends the resulting data to users. Consequently, all information is available
+at the time of news release.
+3 Methods
+3.1 Prompt
+Prompts are critical in guiding ChatGPT’s responses to specific tasks and queries. A prompt
+is a short text that provides context and instructions for ChatGPT to generate a response.
+The prompt can be as simple as a single sentence or as complex as a paragraph or more,
+depending on the nature of the task.
+The prompt serves as the starting point for ChatGPT’s response generation process. The
+model uses the information contained in the prompt to generate a relevant and contextually appropriate response. This process involves analyzing the syntax and semantics of the
+prompt, developing a series of possible answers, and selecting the most appropriate one based
+on various factors, such as coherence, relevance, and grammatical correctness.
+Prompts are essential for enabling ChatGPT to perform a wide range of language tasks,
+such as language translation, text summarization, question answering, and even generating
+coherent and human-like text. They allow the model to adapt to specific contexts and
+generate responses tailored to the user’s needs. Moreover, prompts can be customized to
+perform tasks in different domains, such as finance, healthcare, or customer support.
+We use the following prompt in our study and apply it to the publicly available headlines.
+Forget all your previous instructions. Pretend you are a financial expert. You are
+8
+
+a financial expert with stock recommendation experience. Answer “YES” if good
+news, “NO” if bad news, or “UNKNOWN” if uncertain in the first line. Then
+elaborate with one short and concise sentence on the next line. Is this headline
+good or bad for the stock price of company name in the term term?
+Headline: headline
+In this prompt, we ask ChatGPT, a language model, to assume the role of a financial expert with experience in stock recommendations. The terms company name and headline
+are substituted by the firm name and the respective headline during the query. term
+corresponds to either short or long-term. The prompt is specifically designed for financial
+analysis and asks ChatGPT to evaluate a given news headline and its potential impact on
+a company’s stock price in the short term. ChatGPT is requested to answer “YES” if the
+news is good for the stock price, “NO” if it is bad, or “UNKNOWN” if it is uncertain. ChatGPT is then asked to explain in one sentence to support its answer concisely. The prompt
+specifies that the news headline is the only source of information provided to ChatGPT. It
+is implicitly assumed that the headline contains sufficient information for an expert in the
+financial industry to assess its impact on the stock price reasonably. This prompt is designed
+to demonstrate the capabilities of ChatGPT as a language model in financial analysis tasks.
+We set a temperature of 0 to maximize the reproducibility of the results.
+For example, consider the following headline about Oracle:
+Rimini Street Fined $630,000 in Case Against Oracle.
+The prompt then asks:
+Forget all your previous instructions. Pretend you are a financial expert. You are
+a financial expert with stock recommendation experience. Answer “YES” if good
+news, “NO” if bad news, or “UNKNOWN” if uncertain in the first line. Then
+9
+
+elaborate with one short and concise sentence on the next line. Is this headline
+good or bad for the stock price of Oracle in the short term?
+Headline: Rimini Street Fined $630,000 in Case Against Oracle
+And here is ChatGPT’s response:
+YES
+The fine against Rimini Street could potentially boost investor confidence in
+Oracle’s ability to protect its intellectual property and increase demand for its
+products and services.
+The news headline states that Rimini Street has been fined $630,000 in a case against
+Oracle. The proprietary software analytics tool gives a negative sentiment score of -0.52,
+indicating that the news is perceived as unfavorable. However, ChatGPT responds that
+it believes the information to be positive for Oracle. ChatGPT reasons that the fine could
+increase investor confidence in Oracle’s ability to protect its intellectual property, potentially
+leading to increased demand for its products and services. This difference in sentiment
+highlights the importance of context in natural language processing and the need to carefully
+consider the implications of news headlines before making investment decisions.
+3.2 Empirical Design
+We prompt ChatGPT to provide a recommendation for each headline and transform it into
+a “ChatGPT score,” where “YES” is mapped to 1, “UNKNOWN” to 0, and “NO” to -1. We
+average the scores if there are multiple headlines for a company on a given day. We match
+the headlines to the next market period. For headlines before 6 am on the opening day, we
+assume the headlines can be traded by the market opening of the same day and sold at the
+close of the same day. For headlines after 6 am but before 4 pm, we assume the headlines
+10
+
+can be traded at the same day’s close and sold at the close of the next day. For headlines
+after 4 pm, we assume the headlines can be traded at the opening price of the next day and
+sold at the closing price of that next day. We then run linear regressions of the next day’s
+returns on the ChatGPT score and compare it to the sentiment score provided by a news
+curating company. Thus, all of our results are out-of-sample
+
+Output a pseudo code, high-level, yaml-like structure of my python project.
+Outline the python files that I should make and the functions/behaviors that should be in them in order to achieve this goal.

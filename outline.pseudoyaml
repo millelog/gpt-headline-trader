@@ -1,0 +1,25 @@
+project_root: 
+  - data/ # Folder for storing data
+  - logs/ # Folder for storing logs
+  - utils/ # Folder for utility functions
+    - __init__.py
+    - data_utils.py: 
+      - functions: 
+        - get_headlines(ticker): # Collects all news headlines for a given ticker
+        - preprocess_headlines(headlines): # Preprocesses headlines (removes duplicates, filters irrelevant ones, etc.)
+        - save_headlines_to_file(headlines, filename): # Saves preprocessed headlines to a file
+    - gpt_utils.py: 
+      - functions: 
+        - generate_prompt(headline, company_name, term): # Generates prompt for GPT-3
+        - get_gpt3_response(prompt): # Gets GPT-3's response to a prompt
+        - process_gpt3_response(response): # Processes GPT-3's response and converts it to a score
+    - trading_utils.py: 
+      - functions: 
+        - map_headlines_to_market_period(headlines): # Maps headlines to the next market period
+        - calculate_average_score(scores): # Calculates average score for a company for a given day
+        - execute_trade(ticker, score): # Executes trade based on score
+  - main.py: 
+    - functions: 
+      - main(): # Main function that runs the entire pipeline
+  - config.py: # Contains all configuration variables (API keys, ticker list, etc.)
+  - requirements.txt: # List of project dependencies
