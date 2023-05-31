@@ -1,4 +1,4 @@
-import os
+import json
 import logging
 from typing import List, Tuple
 from utils.data_utils import get_headlines, preprocess_headlines, save_headlines_to_file
@@ -23,7 +23,8 @@ def main():
         except:
             logging.info(f"Error getting headlines for {ticker}, continuing.")
             continue
-        
+
+        #skip this loop if no headlines returned
         if not headlines:
             continue
 
@@ -38,34 +39,38 @@ def main():
         headlines = map_headlines_to_market_period(headlines)
         logging.info(f"Mapped headlines to market period for {ticker}")
 
-        scores = []
-        responses = []
+        records = []
 
         # Generate prompt and get GPT-3's response for each headline
         for headline, publish_time in headlines:
             prompt = generate_prompt(headline, ticker, publish_time)
             response = get_gpt3_response(prompt)
-            print(response)
             score = process_gpt3_response(response)
-            scores.append(score)
-            responses.append(response)
+
+            # Store the headline, response, and score as a record
+            records.append({
+                "headline": headline,
+                "response": response,
+                "score": score
+            })
 
         # Calculate average score for the day
-        total_score = calculate_cumulative_score(scores)
-        average_score = calculate_average_score(scores)
+        total_score = calculate_cumulative_score([record["score"] for record in records])
+        average_score = calculate_average_score([record["score"] for record in records])
         logging.info(f"Average score for {ticker}: {average_score}, {total_score}")
 
         # Store all the relevant information for the ticker in the dictionary
         ticker_data[ticker] = {
-            "headlines": headlines,
-            "responses": responses,
-            "scores": scores,
+            "records": records,
             "average_score": average_score,
             "total_score": total_score,
-            "trade_time": headlines[0][1] if headlines else None  # Assumes all headlines for the same ticker have the same trade time
+            "trade_time": records[0]["headline"][1] if records else None  # Assumes all headlines for the same ticker have the same trade time
         }
-        if total_score < 0 or average_score < 0:
-            execute_trade(ticker, ticker_data[ticker])
+
+        if average_score < 0:
+            with open('data/negative_averages.json', 'w') as outfile:
+                json.dump(ticker_data, outfile)
+
 
     logging.info("Finished processing all tickers")
 
