@@ -3,9 +3,33 @@ from typing import List
 import pandas_market_calendars as mcal
 import pandas as pd
 import json
+import os
 
-# We will need to import any relevant financial libraries that can provide market data
-# Assuming we have a library named 'finance_lib' providing 'get_market_open', 'get_market_close', 'get_next_day' functions
+def save_negative_averages(ticker_data, trade_period, ticker):
+    """
+    Saves the ticker data to a JSON file in a timestamped directory if average score is less than 0.
+
+    Parameters
+    ----------
+    ticker_data : dict
+        Dictionary containing the data for a specific ticker.
+
+    trade_period : dict
+        Dictionary containing the current trade period's details.
+
+    ticker : str
+        The ticker symbol.
+    """
+    if ticker_data[ticker]['average_score'] < 0:
+        # Format the timestamp to use it in the directory name
+        datetime_string = trade_period['trade_buy_time'].strftime('%Y%m%d_%H%M')
+
+        # Create a new directory if it doesn't exist
+        directory = f'data/{datetime_string}'
+        os.makedirs(directory, exist_ok=True)
+        
+        with open(f'{directory}/negative_averages.json', 'w') as outfile:
+            json.dump({ticker: ticker_data}, outfile, indent=4, default=str)
 
 
 def get_current_market_period() -> dict:
@@ -78,7 +102,7 @@ def calculate_average_score(scores: List[int]) -> float:
     """
     return np.mean(scores)
 
-def execute_trade(ticker: str, data: dict):
+def execute_trade(ticker: str, data: dict, trade_period: dict):
     """
     Executes a trade based on the score and saves data to a JSON file.
 
@@ -88,12 +112,23 @@ def execute_trade(ticker: str, data: dict):
         The ticker symbol of the stock to trade.
     data : dict
         The data containing headlines, responses, scores, average score, and trade time.
+    trade_period : dict
+        The trading period data with trading period's details.
     """
     # For now, just log the whole data object into a JSON file
     total_score = str(round(data['total_score']))
     average_score = str(round(data['average_score'],2))
-    with open(f'data/{ticker}_{average_score}_{total_score}_data.json', 'w') as f:
+
+    # Format the timestamp to use it in the directory name
+    datetime_string = trade_period['trade_buy_time'].strftime('%Y%m%d_%H%M%S')
+
+    # Create a new directory if it doesn't exist
+    directory = f'data/{datetime_string}'
+    os.makedirs(directory, exist_ok=True)
+
+    with open(f'{directory}/{ticker}_{average_score}_{total_score}_data.json', 'w') as f:
         json.dump(data, f, indent=4, default=str)  # `default=str` is used to handle datetime objects
 
     # TODO: Implement your trading strategy here. For instance:
     # if data['average_score'] > 0, buy; if data['average_score'] < 0, sell; if data['average_score'] == 0, hold.
+

@@ -3,7 +3,7 @@ import logging
 from typing import List, Tuple
 from utils.data_utils import get_headlines, preprocess_headlines, save_headlines_to_file
 from utils.gpt_utils import generate_prompt, get_gpt3_response, process_gpt3_response
-from utils.trading_utils import calculate_cumulative_score, execute_trade, calculate_average_score, get_current_market_period
+from utils.trading_utils import calculate_cumulative_score, execute_trade, calculate_average_score, get_current_market_period, save_negative_averages
 from config import TICKERS
 import heapq
 
@@ -59,19 +59,17 @@ def process_ticker(ticker, trade_period):
         "sell_time": trade_period['trade_sell_time']
     }
 
-    if average_score < 0:
-        with open('data/negative_averages.json', 'w') as outfile:
-            json.dump({ticker: ticker_data}, outfile, indent=4, default=str)
+    save_negative_averages(ticker_data, trade_period, ticker)
 
     return ticker_data
 
 
-def execute_trades(ticker_data):
+def execute_trades(ticker_data, trade_period):
     # Now execute trades based on the three tickers with the lowest average scores
     worst_tickers = heapq.nsmallest(3, ticker_data.items(), key=lambda x: x[1]["average_score"])
     for ticker, data in worst_tickers:
         logging.info(f"Executing trade for {ticker} with average score {data['average_score']} and trade time {data['trade_time']}")
-        execute_trade(ticker, data)
+        execute_trade(ticker, data, trade_period)
 
 
 def main():
@@ -87,7 +85,7 @@ def main():
             ticker_data[ticker] = ticker_info
 
     logging.info("Finished processing all tickers")
-    execute_trades(ticker_data)
+    execute_trades(ticker_data, trade_period)
 
 
 if __name__ == "__main__":
