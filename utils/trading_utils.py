@@ -1,9 +1,10 @@
 import numpy as np
-from typing import List
+from typing import List, Tuple
 import pandas_market_calendars as mcal
 import pandas as pd
 import json
 import os
+import csv
 
 def save_negative_averages(ticker_data, trade_period):
     """
@@ -101,6 +102,8 @@ def calculate_average_score(scores: List[int]) -> float:
     """
     return np.mean(scores)
 
+
+
 def execute_trade(ticker: str, data: dict, trade_period: dict):
     """
     Executes a trade based on the score and saves data to a JSON file.
@@ -128,6 +131,56 @@ def execute_trade(ticker: str, data: dict, trade_period: dict):
     with open(f'{directory}/{ticker}_{average_score}_{total_score}_data.json', 'w') as f:
         json.dump(data, f, indent=4, default=str)  # `default=str` is used to handle datetime objects
 
+    # Append data to 'data/orders.csv'
+    with open('data/orders.csv', 'a', newline='') as csvfile:
+        fieldnames = ['ticker', 'total_articles', 'average_score', 'total_score', 'buy_time', 'sell_time']
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+
+        writer.writerow({
+            'ticker': ticker,
+            'total_articles': len(data['records']),
+            'average_score': data['average_score'],
+            'total_score': data['total_score'],
+            'buy_time': data['trade_buy_time'],
+            'sell_time': data['trade_sell_time'],
+        })
+
     # TODO: Implement your trading strategy here. For instance:
     # if data['average_score'] > 0, buy; if data['average_score'] < 0, sell; if data['average_score'] == 0, hold.
+
+
+
+
+def get_worst_tickers(ticker_data: dict) -> List[Tuple[str, dict]]:
+    """
+    Gets the tickers with the worst (lowest) average scores, ensuring the total length of all records exceeds 3.
+
+    Parameters
+    ----------
+    ticker_data : dict
+        Dictionary containing the ticker data.
+
+    Returns
+    -------
+    List[Tuple[str, dict]]
+        List of tuples containing the worst tickers and their data.
+    """
+    sorted_tickers = sorted(ticker_data.items(), key=lambda x: x[1]["average_score"])
+
+    worst_tickers = []
+    total_records_length = 0
+    target_length = 3
+
+    for ticker, data in sorted_tickers:
+        if len(data["records"]) <= 1:
+            target_length += 1
+
+        worst_tickers.append((ticker, data))
+        total_records_length += len(data["records"])
+
+        if total_records_length > target_length:
+            break
+
+    return worst_tickers
+
 
