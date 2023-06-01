@@ -67,35 +67,8 @@ def get_page(ticker):
             url=STOCK_URL, payload={"t": ticker}, parse=True
         )
 
-def get_most_recent_trading_period_start():
-    nyse = mcal.get_calendar('NYSE')
-    now = pd.Timestamp.now(tz='US/Eastern')
 
-    # Get today's schedule
-    today_schedule = nyse.schedule(start_date=now, end_date=now)
-
-    if not today_schedule.empty and now <= today_schedule.market_close[0]:
-        # If we are within today's trading period, return the opening time of today
-        return today_schedule.market_open[0]
-    
-    if not today_schedule.empty and now > today_schedule.market_close[0]:
-        return today_schedule.market_close[0]
-
-    # If we are after today's trading period or today is a non-trading day,
-    # check the previous days (up to 10) to find the most recent trading period
-    for days_back in range(1, 11):
-        previous_day = now - pd.DateOffset(days=days_back)
-        previous_day_schedule = nyse.schedule(start_date=previous_day, end_date=previous_day)
-        if not previous_day_schedule.empty:
-            # Return the closing time of the most recent trading day
-            return previous_day_schedule.market_close[0]
-
-    # If no trading day is found within the last 10 days, return None
-    return None
-
-
-
-def get_news(ticker):
+def get_news(ticker, news_start_date):
     """
     Returns a list of sets containing news headline and url
 
@@ -112,11 +85,6 @@ def get_news(ticker):
 
     rows = news_table[0].xpath("./tr[not(@id)]")
 
-    start_of_most_recent_trading_period = get_most_recent_trading_period_start()
-    if start_of_most_recent_trading_period is None:
-        # If we couldn't determine the start of the most recent trading period, return an empty list
-        return []
-
     results = []
     date = None
     for row in rows:
@@ -129,7 +97,7 @@ def get_news(ticker):
             parsed_timestamp = datetime.strptime(raw_timestamp, "%I:%M%p").replace(
                 year=date.year, month=date.month, day=date.day)
         parsed_timestamp = parsed_timestamp.replace(tzinfo=pytz.timezone('US/Pacific'))
-        if parsed_timestamp < start_of_most_recent_trading_period:
+        if parsed_timestamp < news_start_date:
             # If the news item was released before the start of the most recent trading period, break the loop
             break
         if row.xpath("./td")[1].cssselect('div[class="news-link-left"] a') :

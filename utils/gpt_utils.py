@@ -7,7 +7,7 @@ import time
 openai.api_key = OPENAI_API_KEY
 model = "gpt-3.5-turbo" # You can replace this with "gpt-4" if available and if you want to use it
 
-def generate_prompt(headline: str, company_name: str, term: str) -> List[Dict[str, str]]:
+def generate_prompt(headline: str, company_name: str) -> List[Dict[str, str]]:
     """
     Generates prompt for GPT-3.5-turbo or GPT-4.
 

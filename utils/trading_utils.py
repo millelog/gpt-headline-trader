@@ -1,6 +1,5 @@
-import datetime
 import numpy as np
-from typing import List, Tuple
+from typing import List
 import pandas_market_calendars as mcal
 import pandas as pd
 import json
@@ -9,52 +8,41 @@ import json
 # Assuming we have a library named 'finance_lib' providing 'get_market_open', 'get_market_close', 'get_next_day' functions
 
 
-
-def map_headlines_to_market_period(headlines: List[Tuple[str, datetime.datetime]]) -> List[Tuple[str, datetime.datetime]]:
+def get_current_market_period() -> dict:
     """
-    Maps headlines to the next market period based on the time the headline was published.
-
-    Parameters
-    ----------
-    headlines : List[Tuple[str, datetime.datetime]]
-        List of tuples containing the headline and its publish time.
+    Gets the current market period along with the next market open/close time and previous market open/close time based on current time.
 
     Returns
     -------
-    List[Tuple[str, datetime.datetime]]
-        List of tuples containing the headline and the next market period it corresponds to.
+    Dict[str, datetime.datetime]
+        Dictionary containing the headline start time, trade buy time and trade sell time.
     """
     nyse = mcal.get_calendar('NYSE')
-    mapped_headlines = []
+    now = pd.Timestamp.now(tz='US/Pacific').tz_convert('UTC')
 
-    for headline in headlines:
-        publish_time = pd.Timestamp(headline['publish_time'], tz='US/Pacific')
-        headline = headline['headline']
-        # Get the market schedule for the day
-        market_schedule = nyse.schedule(start_date=publish_time, end_date=publish_time)
+    trading_days = nyse.valid_days(start_date=now - pd.DateOffset(days=10), end_date=now + pd.DateOffset(days=10))
 
-        if not market_schedule.empty:
-            # Convert the publish_time to the timezone of the exchange
-            publish_time = publish_time.tz_convert(nyse.tz)
+    trading_periods = []
 
-            # If before market open on the opening day, it can be traded by market opening of the same day
-            if publish_time <= market_schedule.market_open[0]:
-                trade_time = market_schedule.market_open[0]
-            # If after market open but before market close, it can be traded at the same day's close
-            elif market_schedule.market_open[0] < publish_time <= market_schedule.market_close[0]:
-                trade_time = market_schedule.market_close[0]
-            # If after market close, it can be traded at the opening price of the next day
-            else:
-                next_day = publish_time + pd.DateOffset(days=1)
-                next_day_schedule = nyse.schedule(start_date=next_day, end_date=next_day)
-                trade_time = next_day_schedule.market_open[0] if not next_day_schedule.empty else None
-        else:
-            trade_time = None
+    for day in trading_days:
+        market_schedule = nyse.schedule(start_date=day, end_date=day)
+        trading_periods.extend([market_schedule.market_open[0], market_schedule.market_close[0]])
 
-        if trade_time:
-            mapped_headlines.append((headline, trade_time))
+    trading_periods = [period.tz_convert('US/Pacific') for period in trading_periods]
+    trading_periods = sorted(trading_periods)
 
-    return mapped_headlines
+    current_period_index = next((i for i, period in enumerate(trading_periods) if period > now.tz_convert('US/Pacific')), None)
+
+    headline_start_time = trading_periods[current_period_index - 1] if current_period_index is not None else None
+    trade_buy_time = trading_periods[current_period_index] if current_period_index is not None else None
+    trade_sell_time = trading_periods[current_period_index + 1] if current_period_index is not None and len(trading_periods) > current_period_index + 1 else None
+
+    return {
+        'headline_start_time': headline_start_time,
+        'trade_buy_time': trade_buy_time,
+        'trade_sell_time': trade_sell_time,
+    }
+
 
 
 

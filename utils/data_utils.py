@@ -5,7 +5,7 @@ import json
 import datetime
 from dateutil import parser
 
-def get_headlines(ticker: str) -> List[Dict[str, str]]:
+def get_headlines(ticker: str, headline_start_time) -> List[Dict[str, str]]:
     """
     Collects all news headlines for a given ticker.
 
@@ -19,7 +19,7 @@ def get_headlines(ticker: str) -> List[Dict[str, str]]:
     List[Dict]
         A list of dictionaries containing 'date', 'time', 'headline' and 'url'.
     """
-    headlines_data = get_news(ticker)
+    headlines_data = get_news(ticker, headline_start_time)
     headlines = []
     for headline_data in headlines_data:
         headline = {

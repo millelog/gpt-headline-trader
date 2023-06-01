@@ -3,7 +3,7 @@ import logging
 from typing import List, Tuple
 from utils.data_utils import get_headlines, preprocess_headlines, save_headlines_to_file
 from utils.gpt_utils import generate_prompt, get_gpt3_response, process_gpt3_response
-from utils.trading_utils import map_headlines_to_market_period, calculate_cumulative_score, execute_trade, calculate_average_score
+from utils.trading_utils import calculate_cumulative_score, execute_trade, calculate_average_score, get_current_market_period
 from config import TICKERS
 import heapq
 
@@ -13,12 +13,14 @@ def main():
 
     ticker_data = {}  # The dictionary to store information for each ticker
 
+    trade_period = get_current_market_period()
+
     for ticker in TICKERS:
         logging.info(f"Processing ticker {ticker}")
 
         # Get headlines for the ticker
         try:
-            headlines = get_headlines(ticker)
+            headlines = get_headlines(ticker, trade_period['headline_start_time'])
             logging.info(f"Found {len(headlines)} headlines for {ticker}")
         except:
             logging.info(f"Error getting headlines for {ticker}, continuing.")
@@ -32,15 +34,11 @@ def main():
         headlines = preprocess_headlines(headlines)
         logging.info(f"After preprocessing, {len(headlines)} headlines left for {ticker}")
 
-        # Map headlines to the next market period
-        headlines = map_headlines_to_market_period(headlines)
-        logging.info(f"Mapped headlines to market period for {ticker}")
-
         records = []
 
         # Generate prompt and get GPT-3's response for each headline
-        for headline, publish_time in headlines:
-            prompt = generate_prompt(headline, ticker, publish_time)
+        for headline in headlines:
+            prompt = generate_prompt(headline, ticker)
             response = get_gpt3_response(prompt)
             score = process_gpt3_response(response)
 
@@ -61,7 +59,8 @@ def main():
             "records": records,
             "average_score": average_score,
             "total_score": total_score,
-            "trade_time": records[0]["headline"][1] if records else None  # Assumes all headlines for the same ticker have the same trade time
+            "buy_time": trade_period['trade_buy_time'],
+            "sell_time": trade_period['trade_sell_time']
         }
 
         if average_score < 0:
