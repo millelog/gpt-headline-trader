@@ -20,16 +20,15 @@ def save_negative_averages(ticker_data, trade_period, ticker):
     ticker : str
         The ticker symbol.
     """
-    if ticker_data[ticker]['average_score'] < 0:
-        # Format the timestamp to use it in the directory name
-        datetime_string = trade_period['trade_buy_time'].strftime('%Y%m%d_%H%M')
+    # Format the timestamp to use it in the directory name
+    datetime_string = trade_period['trade_buy_time'].strftime('%Y%m%d_%H%M')
 
-        # Create a new directory if it doesn't exist
-        directory = f'data/{datetime_string}'
-        os.makedirs(directory, exist_ok=True)
-        
-        with open(f'{directory}/negative_averages.json', 'w') as outfile:
-            json.dump({ticker: ticker_data}, outfile, indent=4, default=str)
+    # Create a new directory if it doesn't exist
+    directory = f'data/{datetime_string}'
+    os.makedirs(directory, exist_ok=True)
+    
+    with open(f'{directory}/negative_averages.json', 'w') as outfile:
+        json.dump({ticker: ticker_data}, outfile, indent=4, default=str)
 
 
 def get_current_market_period() -> dict:

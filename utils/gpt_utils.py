@@ -108,11 +108,11 @@ def process_gpt3_response(message_content: Dict[str, Any]) -> float:
     first_word = message_content.split(' ', 1)[0].upper()
 
     # Map first word to score based on the recommendation
-    if "YES" in first_word:
+    if "YES" in first_word or "GOOD" in first_word:
         return 1.0
     elif "UNKNOWN" in first_word:
         return 0.0
-    elif "NO" in  first_word:
+    elif "NO" in  first_word or "BAD" in first_word:
         return -1.0
     else:
         # In case there's an unexpected response, it could be handled here.

@@ -59,7 +59,8 @@ def process_ticker(ticker, trade_period):
         "sell_time": trade_period['trade_sell_time']
     }
 
-    save_negative_averages(ticker_data, trade_period, ticker)
+    if average_score < 0:
+        save_negative_averages(ticker_data, trade_period, ticker)
 
     return ticker_data
 
