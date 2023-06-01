@@ -151,14 +151,16 @@ def execute_trade(ticker: str, data: dict, trade_period: dict):
 
 
 
-def get_worst_tickers(ticker_data: dict) -> List[Tuple[str, dict]]:
+def get_worst_tickers(ticker_data: dict, num_tickers: int = 5) -> List[Tuple[str, dict]]:
     """
-    Gets the tickers with the worst (lowest) average scores, ensuring the total length of all records exceeds 3.
+    Gets the tickers with the worst (lowest) average scores.
 
     Parameters
     ----------
     ticker_data : dict
         Dictionary containing the ticker data.
+    num_tickers : int
+        The target number of tickers to return.
 
     Returns
     -------
@@ -166,21 +168,9 @@ def get_worst_tickers(ticker_data: dict) -> List[Tuple[str, dict]]:
         List of tuples containing the worst tickers and their data.
     """
     sorted_tickers = sorted(ticker_data.items(), key=lambda x: x[1]["average_score"])
-
-    worst_tickers = []
-    total_records_length = 0
-    target_length = 3
-
-    for ticker, data in sorted_tickers:
-        if len(data["records"]) <= 1:
-            target_length += 1
-
-        worst_tickers.append((ticker, data))
-        total_records_length += len(data["records"])
-
-        if total_records_length > target_length:
-            break
+    worst_tickers = sorted_tickers[:num_tickers]
 
     return worst_tickers
+
 
 
