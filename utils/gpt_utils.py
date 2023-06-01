@@ -103,7 +103,7 @@ def process_gpt3_response(message_content: Dict[str, Any]) -> float:
         The score derived from GPT-3.5-turbo or GPT-4's response.
     """
     if not message_content:
-        return 0.0
+        return None
     # Check the first word of the response
     first_word = message_content.split(' ', 1)[0].upper()
 
