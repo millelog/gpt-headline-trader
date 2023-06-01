@@ -35,7 +35,7 @@ def process_ticker(ticker, trade_period):
         response = get_gpt3_response(prompt)
         score = process_gpt3_response(response)
 
-        if not (prompt or response or score):
+        if prompt is None or response is None or score is None:
             continue
 
         # Store the headline, response, and score as a record
