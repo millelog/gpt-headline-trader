@@ -51,7 +51,7 @@ def process_ticker(ticker, trade_period):
     logging.info(f"Average score for {ticker}: {average_score}, {total_score}")
 
     # Store all the relevant information for the ticker in the dictionary
-    ticker_data = {
+    ticker_info = {
         "records": records,
         "average_score": average_score,
         "total_score": total_score,
@@ -59,10 +59,7 @@ def process_ticker(ticker, trade_period):
         "sell_time": trade_period['trade_sell_time']
     }
 
-    if average_score < 0:
-        save_negative_averages(ticker_data, trade_period, ticker)
-
-    return ticker_data
+    return ticker_info
 
 
 def execute_trades(ticker_data, trade_period):
@@ -84,6 +81,7 @@ def main():
         ticker_info = process_ticker(ticker, trade_period)
         if ticker_info:
             ticker_data[ticker] = ticker_info
+            save_negative_averages(ticker_data, trade_period)
 
     logging.info("Finished processing all tickers")
     execute_trades(ticker_data, trade_period)

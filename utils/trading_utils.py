@@ -5,7 +5,7 @@ import pandas as pd
 import json
 import os
 
-def save_negative_averages(ticker_data, trade_period, ticker):
+def save_negative_averages(ticker_data, trade_period):
     """
     Saves the ticker data to a JSON file in a timestamped directory if average score is less than 0.
 
@@ -28,7 +28,7 @@ def save_negative_averages(ticker_data, trade_period, ticker):
     os.makedirs(directory, exist_ok=True)
     
     with open(f'{directory}/negative_averages.json', 'w') as outfile:
-        json.dump({ticker: ticker_data}, outfile, indent=4, default=str)
+        json.dump({ticker: data for ticker, data in ticker_data.items() if data['average_score'] < 0}, outfile, indent=4, default=str)
 
 
 def get_current_market_period() -> dict:
