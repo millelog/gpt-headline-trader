@@ -56,7 +56,7 @@ def save_ticker_data(ticker_data, trade_period):
     os.makedirs(directory, exist_ok=True)
     
     with open(f'{directory}/ticker_data.json', 'w') as outfile:
-        json.dump({ticker: data for ticker, data in ticker_data.items() if data['average_score'] < 0}, outfile, indent=4, default=str)
+        json.dump({ticker: data for ticker, data in ticker_data.items()}, outfile, indent=4, default=str)
 
 def get_headlines(ticker: str, headline_start_time) -> List[Dict[str, str]]:
     """
