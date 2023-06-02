@@ -80,8 +80,8 @@ def process_ticker(ticker, trade_period, ticker_data):
         "records": records,
         "average_score": average_score,
         "total_score": total_score,
-        "buy_time": trade_period['trade_buy_time'].strftime('%Y%m%d_%H%M'),
-        "sell_time": trade_period['trade_sell_time'].strftime('%Y%m%d_%H%M')
+        "buy_time": trade_period['trade_buy_time'].strftime('%Y-%m-%d %H:%M'),
+        "sell_time": trade_period['trade_sell_time'].strftime('%Y-%m-%d %H:%M')
     }
 
     return ticker_info

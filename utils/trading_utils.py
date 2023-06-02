@@ -5,8 +5,7 @@ import pandas as pd
 import json
 import os
 import csv
-
-
+import random
 
 
 def get_current_market_period() -> dict:
@@ -80,6 +79,31 @@ def calculate_average_score(scores: List[int]) -> float:
     return np.mean(scores)
 
 
+def remove_duplicates(existing_data):
+    """
+    Remove duplicates from existing data.
+
+    This function finds all entries with the same ticker. If there are multiple
+    entries, it sorts them by the length of their 'records' list, and removes the
+    one with the fewest records. If there are multiple entries with the same number
+    of records, it randomly chooses one to remove.
+    """
+    tickers = [entry['ticker'] for entry in existing_data]
+    for ticker in set(tickers):
+        duplicates = [entry for entry in existing_data if entry['ticker'] == ticker]
+        if len(duplicates) > 1:
+            # Sort duplicates by the length of their records and remove the one with fewest records
+            duplicates.sort(key=lambda x: len(x['records']))
+            if len(duplicates[0]['records']) == len(duplicates[1]['records']):
+                # If equal, randomly select one to remove
+                duplicate_to_remove = random.choice(duplicates)
+            else:
+                duplicate_to_remove = duplicates[0]
+
+            # Remove the duplicate from the existing_data list
+            existing_data.remove(duplicate_to_remove)
+    return existing_data
+
 
 def save_to_json(directory: str, action: str, ticker: str, data: dict):
     json_path = f'{directory}/{action}_data.json'
@@ -93,18 +117,24 @@ def save_to_json(directory: str, action: str, ticker: str, data: dict):
         existing_data = []
 
     # Append the new data to the existing data
-    existing_data.append({
+    new_data = {
         'ticker': ticker,
+        'records': data['records'],
         'total_articles': len(data['records']),
         'average_score': data['average_score'],
         'total_score': data['total_score'],
         'buy_time': data['buy_time'],
         'sell_time': data['sell_time'],
-    })
+    }
+    existing_data.append(new_data)
+
+    # Remove duplicates from the existing data
+    existing_data = remove_duplicates(existing_data)
 
     # Write the updated data back to the file
     with open(json_path, 'w') as f:
         json.dump(existing_data, f, indent=4, default=str)  # `default=str` is used to handle datetime objects
+
 
 def append_to_csv(directory: str, action: str, ticker: str, data: dict):
     with open(f'{directory}/{action}_orders.csv', 'a', newline='') as csvfile:
