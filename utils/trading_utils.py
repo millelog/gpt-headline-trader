@@ -81,6 +81,45 @@ def calculate_average_score(scores: List[int]) -> float:
 
 
 
+def save_to_json(directory: str, action: str, ticker: str, data: dict):
+    json_path = f'{directory}/{action}_data.json'
+
+    if os.path.isfile(json_path):
+        # If the file exists, read it
+        with open(json_path, 'r') as f:
+            existing_data = json.load(f)
+    else:
+        # Otherwise, create an empty list
+        existing_data = []
+
+    # Append the new data to the existing data
+    existing_data.append({
+        'ticker': ticker,
+        'total_articles': len(data['records']),
+        'average_score': data['average_score'],
+        'total_score': data['total_score'],
+        'buy_time': data['buy_time'],
+        'sell_time': data['sell_time'],
+    })
+
+    # Write the updated data back to the file
+    with open(json_path, 'w') as f:
+        json.dump(existing_data, f, indent=4, default=str)  # `default=str` is used to handle datetime objects
+
+def append_to_csv(directory: str, action: str, ticker: str, data: dict):
+    with open(f'{directory}/{action}_orders.csv', 'a', newline='') as csvfile:
+        fieldnames = ['ticker', 'total_articles', 'average_score', 'total_score', 'buy_time', 'sell_time']
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+
+        writer.writerow({
+            'ticker': ticker,
+            'total_articles': len(data['records']),
+            'average_score': data['average_score'],
+            'total_score': data['total_score'],
+            'buy_time': data['buy_time'],
+            'sell_time': data['sell_time'],
+        })
+
 def execute_trade(action: str, ticker: str, data: dict, trade_period: dict):
     """
     Executes a trade based on the score and saves data to a JSON file.
@@ -105,26 +144,12 @@ def execute_trade(action: str, ticker: str, data: dict, trade_period: dict):
     directory = f'data/{datetime_string}'
     os.makedirs(directory, exist_ok=True)
 
-    with open(f'{directory}/{ticker}_data.json', 'w') as f:
-        json.dump(data, f, indent=4, default=str)  # `default=str` is used to handle datetime objects
-
-    # Append data to 'data/orders.csv'
-    with open(f'{directory}/{action}_orders.csv', 'a', newline='') as csvfile:
-        fieldnames = ['ticker', 'total_articles', 'average_score', 'total_score', 'buy_time', 'sell_time']
-        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-
-        writer.writerow({
-            'ticker': ticker,
-            'total_articles': len(data['records']),
-            'average_score': data['average_score'],
-            'total_score': data['total_score'],
-            'buy_time': data['buy_time'].strftime('%Y%m%d_%H%M'),
-            'sell_time': data['sell_time'].strftime('%Y%m%d_%H%M'),
-        })
-
+    save_to_json(directory, action, ticker, data)
+    append_to_csv(directory, action, ticker, data)
 
     # TODO: Implement your trading strategy here. For instance:
     # if data['average_score'] > 0, buy; if data['average_score'] < 0, sell; if data['average_score'] == 0, hold.
+
 
 def get_tickers_with_records_above_one(sorted_tickers: List[Tuple[str, dict]], num_tickers: int) -> List[Tuple[str, dict]]:
     """

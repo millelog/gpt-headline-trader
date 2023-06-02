@@ -29,30 +29,36 @@ def generate_and_store_records(headlines, ticker, ticker_data):
     records = []
 
     # Create a set of already processed headlines for this ticker
-    processed_headlines = set()
+    processed_headlines = {}
     if ticker in ticker_data:
-        processed_headlines = set(record["headline"] for record in ticker_data[ticker].get('records', []))
+        processed_headlines = {record["headline"]["url"]: record for record in ticker_data[ticker].get('records', [])}
 
     # Generate prompt and get GPT-3's response for each headline
     for headline in headlines:
-        # Skip processing if headline already processed
-        if headline['headline'] in processed_headlines:
-            continue
+        if headline['url'] in processed_headlines:
+            # If the headline is already processed, reuse its data
+            record = processed_headlines[headline['url']]
+        else:
+            prompt = generate_prompt(headline, ticker)
+            response = get_gpt3_response(prompt)
+            score = process_gpt3_response(response)
 
-        prompt = generate_prompt(headline, ticker)
-        response = get_gpt3_response(prompt)
-        score = process_gpt3_response(response)
+            if prompt is None or response is None or score is None:
+                continue
 
-        if prompt is None or response is None or score is None:
-            continue
-
-        # Store the headline, response, and score as a record
-        records.append({
-            "headline": headline,
-            "response": response,
-            "score": score
-        })
+            # Create a new record
+            record = {
+                "headline": headline,
+                "response": response,
+                "score": score
+            }
+        
+        # Append the record to the list
+        records.append(record)
+    
     return records
+
+
 
 
 def process_ticker(ticker, trade_period, ticker_data):
