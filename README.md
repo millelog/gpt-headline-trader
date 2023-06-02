@@ -45,3 +45,30 @@ The bot works by following these steps:
 2. Preprocesses the headlines to ensure they're suitable for the GPT-3 model.
 3. Generates a prompt for each headline and asks GPT-3 for a response.
 4. Based on the GPT-3 response, decides whether to buy or sell the ticker.
+
+### ticker_data Dict Definition
+
+```
+ticker_data: dict
+    This dictionary holds relevant information for each ticker that has been processed. It maps ticker symbols to a dictionary of data for that ticker. Each ticker's data dictionary contains the following keys:
+
+    "records": list
+        A list of dictionaries, each representing a processed headline record for this ticker. Each record dictionary contains the following keys:
+        - "headline": str, the original headline
+        - "response": str, GPT-3's response to the headline
+        - "score": float, the sentiment score assigned to the headline by GPT-3
+
+    "average_score": float
+        The average sentiment score of all the processed headlines for this ticker.
+
+    "total_score": float
+        The sum of sentiment scores of all the processed headlines for this ticker.
+
+    "buy_time": datetime.datetime
+        The time at which a trade for this ticker should be bought.
+
+    "sell_time": datetime.datetime
+        The time at which a trade for this ticker should be sold.
+
+    Note: The dictionary initially contains no tickers. Tickers and their corresponding data are added during the execution of the main function as headlines are processed.
+```

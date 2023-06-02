@@ -6,30 +6,7 @@ import json
 import os
 import csv
 
-def save_negative_averages(ticker_data, trade_period):
-    """
-    Saves the ticker data to a JSON file in a timestamped directory if average score is less than 0.
 
-    Parameters
-    ----------
-    ticker_data : dict
-        Dictionary containing the data for a specific ticker.
-
-    trade_period : dict
-        Dictionary containing the current trade period's details.
-
-    ticker : str
-        The ticker symbol.
-    """
-    # Format the timestamp to use it in the directory name
-    datetime_string = trade_period['trade_buy_time'].strftime('%Y%m%d_%H%M')
-
-    # Create a new directory if it doesn't exist
-    directory = f'data/{datetime_string}'
-    os.makedirs(directory, exist_ok=True)
-    
-    with open(f'{directory}/negative_averages.json', 'w') as outfile:
-        json.dump({ticker: data for ticker, data in ticker_data.items() if data['average_score'] < 0}, outfile, indent=4, default=str)
 
 
 def get_current_market_period() -> dict:
@@ -104,7 +81,7 @@ def calculate_average_score(scores: List[int]) -> float:
 
 
 
-def execute_trade(ticker: str, data: dict, trade_period: dict):
+def execute_trade(action: str, ticker: str, data: dict, trade_period: dict):
     """
     Executes a trade based on the score and saves data to a JSON file.
 
@@ -128,11 +105,11 @@ def execute_trade(ticker: str, data: dict, trade_period: dict):
     directory = f'data/{datetime_string}'
     os.makedirs(directory, exist_ok=True)
 
-    with open(f'{directory}/{ticker}_{average_score}_{total_score}_data.json', 'w') as f:
+    with open(f'{directory}/{ticker}_data.json', 'w') as f:
         json.dump(data, f, indent=4, default=str)  # `default=str` is used to handle datetime objects
 
     # Append data to 'data/orders.csv'
-    with open('data/orders.csv', 'a', newline='') as csvfile:
+    with open(f'{directory}/{action}_orders.csv', 'a', newline='') as csvfile:
         fieldnames = ['ticker', 'total_articles', 'average_score', 'total_score', 'buy_time', 'sell_time']
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
 
@@ -148,12 +125,37 @@ def execute_trade(ticker: str, data: dict, trade_period: dict):
     # TODO: Implement your trading strategy here. For instance:
     # if data['average_score'] > 0, buy; if data['average_score'] < 0, sell; if data['average_score'] == 0, hold.
 
+def get_tickers_with_records_above_one(sorted_tickers: List[Tuple[str, dict]], num_tickers: int) -> List[Tuple[str, dict]]:
+    """
+    Helper function that filters the tickers based on the length of their records.
 
+    Parameters
+    ----------
+    sorted_tickers : List[Tuple[str, dict]]
+        List of tuples containing sorted tickers and their data.
+    num_tickers : int
+        The target number of tickers to return.
+
+    Returns
+    -------
+    List[Tuple[str, dict]]
+        List of tuples containing filtered tickers and their data.
+    """
+    tickers = []
+    for ticker, data in sorted_tickers:
+        if len(data['records']) > 1:
+            tickers.append((ticker, data))
+            if len(tickers) == num_tickers:
+                break
+        else:
+            tickers.append((ticker, data))
+            num_tickers += 1
+    return tickers
 
 
 def get_worst_tickers(ticker_data: dict, num_tickers: int = 5) -> List[Tuple[str, dict]]:
     """
-    Gets the tickers with the worst (lowest) average scores.
+    Gets the tickers with the worst (lowest) average scores, excluding tickers with only one record.
 
     Parameters
     ----------
@@ -167,10 +169,31 @@ def get_worst_tickers(ticker_data: dict, num_tickers: int = 5) -> List[Tuple[str
     List[Tuple[str, dict]]
         List of tuples containing the worst tickers and their data.
     """
-    sorted_tickers = sorted(ticker_data.items(), key=lambda x: x[1]["average_score"])
-    worst_tickers = sorted_tickers[:num_tickers]
 
+    sorted_tickers = sorted(ticker_data.items(), key=lambda x: x[1]["average_score"])
+    worst_tickers = get_tickers_with_records_above_one(sorted_tickers, num_tickers)
     return worst_tickers
+
+
+def get_best_tickers(ticker_data: dict, num_tickers: int = 5) -> List[Tuple[str, dict]]:
+    """
+    Gets the tickers with the best (highest) average scores, excluding tickers with only one record.
+
+    Parameters
+    ----------
+    ticker_data : dict
+        Dictionary containing the ticker data.
+    num_tickers : int
+        The target number of tickers to return.
+
+    Returns
+    -------
+    List[Tuple[str, dict]]
+        List of tuples containing the best tickers and their data.
+    """
+    sorted_tickers = sorted(ticker_data.items(), key=lambda x: x[1]["average_score"], reverse=True)
+    best_tickers = get_tickers_with_records_above_one(sorted_tickers, num_tickers)
+    return best_tickers
 
 
 
