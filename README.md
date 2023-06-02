@@ -54,7 +54,10 @@ ticker_data: dict
 
     "records": list
         A list of dictionaries, each representing a processed headline record for this ticker. Each record dictionary contains the following keys:
-        - "headline": str, the original headline
+        - "headline": dict, the original headline represented as a dictionary with the following keys:
+          - "publish_time": datetime.datetime, the time the headline was published
+          - "headline": str, the headline text
+          - "url": str, the url of the headline
         - "response": str, GPT-3's response to the headline
         - "score": float, the sentiment score assigned to the headline by GPT-3
 
@@ -71,4 +74,5 @@ ticker_data: dict
         The time at which a trade for this ticker should be sold.
 
     Note: The dictionary initially contains no tickers. Tickers and their corresponding data are added during the execution of the main function as headlines are processed.
+
 ```

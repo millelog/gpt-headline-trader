@@ -118,9 +118,10 @@ def execute_trade(action: str, ticker: str, data: dict, trade_period: dict):
             'total_articles': len(data['records']),
             'average_score': data['average_score'],
             'total_score': data['total_score'],
-            'buy_time': data['buy_time'],
-            'sell_time': data['sell_time'],
+            'buy_time': data['buy_time'].strftime('%Y%m%d_%H%M'),
+            'sell_time': data['sell_time'].strftime('%Y%m%d_%H%M'),
         })
+
 
     # TODO: Implement your trading strategy here. For instance:
     # if data['average_score'] > 0, buy; if data['average_score'] < 0, sell; if data['average_score'] == 0, hold.

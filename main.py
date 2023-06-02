@@ -1,16 +1,12 @@
 import json
 import logging
-from typing import List, Tuple
 from utils.data_utils import get_headlines, preprocess_headlines, load_ticker_data, save_ticker_data
 from utils.gpt_utils import generate_prompt, get_gpt3_response, process_gpt3_response
 from utils.trading_utils import calculate_cumulative_score, execute_trade, calculate_average_score, get_current_market_period, get_worst_tickers, get_best_tickers
 from config import TICKERS
-import heapq
 
 
-def process_ticker(ticker, trade_period, ticker_data):
-    logging.info(f"Processing ticker {ticker}")
-
+def get_and_process_headlines(ticker, trade_period):
     # Get headlines for the ticker
     try:
         headlines = get_headlines(ticker, trade_period['headline_start_time'])
@@ -26,16 +22,21 @@ def process_ticker(ticker, trade_period, ticker_data):
     # Preprocess the headlines
     headlines = preprocess_headlines(headlines)
     logging.info(f"After preprocessing, {len(headlines)} headlines left for {ticker}")
+    return headlines
 
+
+def generate_and_store_records(headlines, ticker, ticker_data):
     records = []
 
     # Create a set of already processed headlines for this ticker
-    processed_headlines = set(record["headline"] for record in ticker_data.get(ticker, {}).get('records', []))
+    processed_headlines = set()
+    if ticker in ticker_data:
+        processed_headlines = set(record["headline"] for record in ticker_data[ticker].get('records', []))
 
     # Generate prompt and get GPT-3's response for each headline
     for headline in headlines:
         # Skip processing if headline already processed
-        if headline in processed_headlines:
+        if headline['headline'] in processed_headlines:
             continue
 
         prompt = generate_prompt(headline, ticker)
@@ -51,6 +52,17 @@ def process_ticker(ticker, trade_period, ticker_data):
             "response": response,
             "score": score
         })
+    return records
+
+
+def process_ticker(ticker, trade_period, ticker_data):
+    logging.info(f"Processing ticker {ticker}")
+
+    headlines = get_and_process_headlines(ticker, trade_period)
+    if not headlines:
+        return None
+
+    records = generate_and_store_records(headlines, ticker, ticker_data)
 
     # Calculate average score for the day
     total_score = calculate_cumulative_score([record["score"] for record in records])
