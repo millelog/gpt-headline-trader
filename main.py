@@ -87,6 +87,18 @@ def process_ticker(ticker, trade_period, ticker_data):
     return ticker_info
 
 
+def delete_old_files(directory):
+    file_list = [f'{directory}/buy_orders.csv', f'{directory}/short_sell_orders.csv']
+    for filepath in file_list:
+        if os.path.exists(filepath):
+            try:
+                os.remove(filepath)
+                print(f'{filepath} has been deleted.')
+            except Exception as e:
+                print(f'Error occurred while trying to delete {filepath}: {e}')
+        else:
+            print(f'The file {filepath} does not exist.')
+
 
 def execute_trades(ticker_data, trade_period):
     # Now execute trades based on the three tickers with the lowest average scores
@@ -105,7 +117,12 @@ def main():
 
     
     trade_period = get_current_market_period()
-    ticker_data = load_ticker_data(trade_period)  # The dictionary to store information for each ticker
+    datetime_string = trade_period['trade_buy_time'].strftime('%Y%m%d_%H%M')
+    directory = f'data/{datetime_string}'
+    
+    delete_old_files(directory)
+
+    ticker_data = load_ticker_data(trade_period)
 
     for ticker in TICKERS:
         ticker_info = process_ticker(ticker, trade_period, ticker_data)
