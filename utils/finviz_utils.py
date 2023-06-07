@@ -68,7 +68,7 @@ def get_page(ticker):
         )
 
 
-def get_news(ticker, news_start_date):
+def get_news(ticker, trade_period):
     """
     Returns a list of sets containing news headline and url
 
@@ -97,7 +97,10 @@ def get_news(ticker, news_start_date):
             parsed_timestamp = datetime.strptime(raw_timestamp, "%I:%M%p").replace(
                 year=date.year, month=date.month, day=date.day)
         parsed_timestamp = parsed_timestamp.replace(tzinfo=pytz.timezone('US/Pacific'))
-        if parsed_timestamp < news_start_date:
+        if parsed_timestamp > trade_period['headline_end_time']:
+            # If the news item was released after the end of the designated new period, skip it
+            continue
+        if parsed_timestamp < trade_period['headline_start_time']:
             # If the news item was released before the start of the most recent trading period, break the loop
             break
         if row.xpath("./td")[1].cssselect('div[class="news-link-left"] a') :

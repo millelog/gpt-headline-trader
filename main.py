@@ -1,15 +1,21 @@
-import json
+import os
 import logging
+
+import pandas as pd
 from utils.data_utils import get_headlines, preprocess_headlines, load_ticker_data, save_ticker_data
 from utils.gpt_utils import generate_prompt, get_gpt3_response, process_gpt3_response
-from utils.trading_utils import calculate_cumulative_score, execute_trade, calculate_average_score, get_current_market_period, get_worst_tickers, get_best_tickers
+from utils.trading_utils import calculate_cumulative_score, execute_trade, calculate_average_score, get_trade_period, get_worst_tickers, get_best_tickers
 from config import TICKERS
+import sys
+from typing import Optional
+import datetime
+
 
 
 def get_and_process_headlines(ticker, trade_period):
     # Get headlines for the ticker
     try:
-        headlines = get_headlines(ticker, trade_period['headline_start_time'])
+        headlines = get_headlines(ticker, trade_period)
         logging.info(f"Found {len(headlines)} headlines for {ticker}")
     except:
         logging.info(f"Error getting headlines for {ticker}, continuing.")
@@ -111,15 +117,22 @@ def execute_trades(ticker_data, trade_period):
         logging.info(f"Executing buy trade for {ticker} with average score {data['average_score']}, total score {data['total_score']}, buy time {data['buy_time']}, and sell time {data['sell_time']}")
         execute_trade('buy', ticker, data, trade_period)
 
-def main():
+def main(date_string: Optional[str] = None):
     logging.basicConfig(filename='logs/trading_bot.log', level=logging.INFO)
     logging.info("Starting trading bot")
 
-    
-    trade_period = get_current_market_period()
+    if date_string:
+        date_time = pd.Timestamp(datetime.datetime.strptime(date_string, "%Y-%m-%d %H:%M"), tz='US/Pacific')
+    else:
+        date_time = pd.Timestamp.now(tz='US/Pacific')
+
+    trade_period = get_trade_period(date_time)
+    print(date_time)
+    print(trade_period)
+    logging.info(trade_period)
     datetime_string = trade_period['trade_buy_time'].strftime('%Y%m%d_%H%M')
     directory = f'data/{datetime_string}'
-    
+
     delete_old_files(directory)
 
     ticker_data = load_ticker_data(trade_period)
@@ -133,5 +146,9 @@ def main():
     logging.info("Finished processing all tickers")
     execute_trades(ticker_data, trade_period)
 
+
 if __name__ == "__main__":
-    main()
+    date_string = sys.argv[1] if len(sys.argv) > 1 else None
+    main(date_string)
+
+

@@ -1,26 +1,34 @@
 import numpy as np
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 import pandas_market_calendars as mcal
 import pandas as pd
 import json
 import os
 import csv
 import random
+import datetime
 
-
-def get_current_market_period() -> dict:
+def get_trade_period(date_time: Optional[pd.Timestamp] = None) -> dict:
     """
-    Gets the current market period along with the next market open/close time and previous market open/close time based on current time.
+    Gets the current market period along with the next market open/close time and previous market open/close time based on provided time.
+
+    Parameters
+    ----------
+    date_time : Optional[datetime.datetime]
+        The datetime object to base the start_date and end_date on. If None, uses the current time.
 
     Returns
     -------
     Dict[str, datetime.datetime]
-        Dictionary containing the headline start time, trade buy time and trade sell time.
+        Dictionary containing the headline start time, headline end time, trade buy time and trade sell time.
     """
     nyse = mcal.get_calendar('NYSE')
-    now = pd.Timestamp.now(tz='US/Pacific').tz_convert('UTC')
+    if date_time is None:
+        date_time = pd.Timestamp.now(tz='US/Pacific').tz_convert('UTC')
+    else:
+        date_time = date_time.tz_convert('UTC')
 
-    trading_days = nyse.valid_days(start_date=now - pd.DateOffset(days=10), end_date=now + pd.DateOffset(days=10))
+    trading_days = nyse.valid_days(start_date=date_time - pd.DateOffset(days=10), end_date=date_time + pd.DateOffset(days=10))
 
     trading_periods = []
 
@@ -31,17 +39,20 @@ def get_current_market_period() -> dict:
     trading_periods = [period.tz_convert('US/Pacific') for period in trading_periods]
     trading_periods = sorted(trading_periods)
 
-    current_period_index = next((i for i, period in enumerate(trading_periods) if period > now.tz_convert('US/Pacific')), None)
+    current_period_index = next((i for i, period in enumerate(trading_periods) if period > date_time.tz_convert('US/Pacific')), None)
 
     headline_start_time = trading_periods[current_period_index - 1] if current_period_index is not None else None
+    headline_end_time = trading_periods[current_period_index] if current_period_index is not None else None
     trade_buy_time = trading_periods[current_period_index] if current_period_index is not None else None
     trade_sell_time = trading_periods[current_period_index + 1] if current_period_index is not None and len(trading_periods) > current_period_index + 1 else None
 
     return {
         'headline_start_time': headline_start_time,
+        'headline_end_time': headline_end_time,
         'trade_buy_time': trade_buy_time,
         'trade_sell_time': trade_sell_time,
     }
+
 
 
 

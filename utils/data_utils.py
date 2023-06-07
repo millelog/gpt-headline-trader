@@ -58,7 +58,7 @@ def save_ticker_data(ticker_data, trade_period):
     with open(f'{directory}/ticker_data.json', 'w') as outfile:
         json.dump({ticker: data for ticker, data in ticker_data.items()}, outfile, indent=4, default=str)
 
-def get_headlines(ticker: str, headline_start_time) -> List[Dict[str, str]]:
+def get_headlines(ticker: str, trade_period) -> List[Dict[str, str]]:
     """
     Collects all news headlines for a given ticker.
 
@@ -72,7 +72,7 @@ def get_headlines(ticker: str, headline_start_time) -> List[Dict[str, str]]:
     List[Dict]
         A list of dictionaries containing 'date', 'time', 'headline' and 'url'.
     """
-    headlines_data = get_news(ticker, headline_start_time)
+    headlines_data = get_news(ticker, trade_period)
     headlines = []
     for headline_data in headlines_data:
         headline = {
