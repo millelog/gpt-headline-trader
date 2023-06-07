@@ -214,9 +214,6 @@ def get_tickers_with_records_above_one(sorted_tickers: List[Tuple[str, dict]], n
             tickers.append((ticker, data))
             if len(tickers) == num_tickers:
                 break
-        else:
-            tickers.append((ticker, data))
-            num_tickers += 1
     return tickers
 
 
