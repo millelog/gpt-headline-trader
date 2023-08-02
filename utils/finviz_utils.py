@@ -6,6 +6,8 @@ import pandas as pd
 import pandas_market_calendars as mcal
 import asyncio
 import pytz
+import urllib3
+
 
 from lxml import etree
 
@@ -75,7 +77,7 @@ def get_news(ticker, trade_period):
     :param ticker: stock symbol
     :return: list
     """
-
+    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
     get_page(ticker)
     page_parsed = STOCK_PAGE[ticker]
     news_table = page_parsed.cssselect('table[id="news-table"]')
@@ -85,10 +87,11 @@ def get_news(ticker, trade_period):
 
     rows = news_table[0].xpath("./tr[not(@id)]")
 
+
     results = []
     date = None
     for row in rows:
-        raw_timestamp = row.xpath("./td")[0].xpath("text()")[0]
+        raw_timestamp = row.xpath("./td")[0].xpath("text()")[0].strip()
 
         if len(raw_timestamp) > 8:
             parsed_timestamp = datetime.strptime(raw_timestamp, "%b-%d-%y %I:%M%p")  # Update the date format
